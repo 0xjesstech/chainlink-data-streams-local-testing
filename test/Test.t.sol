@@ -15,30 +15,44 @@ contract DataStreamsTest is Test {
     MockReportGenerator public mockReportGenerator;
     ClientReportsVerifier public consumer;
     int192 initialPrice;
+    uint256 constant LINK_FUNDS = 100 ether;
 
     function setUp() public {
         dataStreamsScript = new DataStreamsScript();
-        (
-            dataStreamsLocalSimulator,
-            mockReportGenerator,
-            consumer,
-            initialPrice
-        ) = dataStreamsScript.run();
+        (dataStreamsLocalSimulator, mockReportGenerator, consumer, initialPrice) = dataStreamsScript.run();
+        dataStreamsLocalSimulator.requestLinkFromFaucet(address(consumer), LINK_FUNDS);
     }
 
-    function testReportGenerator() public {
-        mockReportGenerator.updateFees(1 ether, 0.5 ether);
-        (bytes memory signedReportV3, ) = mockReportGenerator
-            .generateReportV3();
+    function testReportGeneratorInitialization() public {
+        int192 lastDecodedPriceBefore = consumer.lastDecodedPrice();
+        console2.log("Last Decoded Price Starts at 0:", lastDecodedPriceBefore);
+        assertEq(lastDecodedPriceBefore, 0);
+    }
 
-        dataStreamsLocalSimulator.requestLinkFromFaucet(
-            address(consumer),
-            1 ether
-        );
+    function testReportGeneratorInitialUpdate() public {
+        (bytes memory signedReportV3,) = mockReportGenerator.generateReportV3();
 
         consumer.verifyReport(signedReportV3);
 
-        int192 lastDecodedPrice = consumer.lastDecodedPrice();
-        assertEq(lastDecodedPrice, initialPrice);
+        int192 lastDecodedPriceAfter = consumer.lastDecodedPrice();
+        console2.log("Last Decoded Price after initial report:", lastDecodedPriceAfter);
+        assertEq(lastDecodedPriceAfter, initialPrice);
+    }
+
+    function testReportGeneratorUpdates() public {
+        int192 lastDecodedPriceBefore = consumer.lastDecodedPrice();
+        console2.log("Last Decoded Price before update:", lastDecodedPriceBefore);
+
+        int192 newPrice = initialPrice + 1000;
+
+        mockReportGenerator.updatePrice(newPrice);
+        (bytes memory signedReportV3,) = mockReportGenerator.generateReportV3();
+
+        consumer.verifyReport(signedReportV3);
+
+        int192 lastDecodedPriceAfter = consumer.lastDecodedPrice();
+        console2.log("Last Decoded Price after update:", lastDecodedPriceAfter);
+
+        assertEq(newPrice, lastDecodedPriceAfter);
     }
 }
