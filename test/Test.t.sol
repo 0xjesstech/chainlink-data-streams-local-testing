@@ -19,8 +19,16 @@ contract DataStreamsTest is Test {
 
     function setUp() public {
         dataStreamsScript = new DataStreamsScript();
-        (dataStreamsLocalSimulator, mockReportGenerator, consumer, initialPrice) = dataStreamsScript.run();
-        dataStreamsLocalSimulator.requestLinkFromFaucet(address(consumer), LINK_FUNDS);
+        (
+            dataStreamsLocalSimulator,
+            mockReportGenerator,
+            consumer,
+            initialPrice
+        ) = dataStreamsScript.run();
+        dataStreamsLocalSimulator.requestLinkFromFaucet(
+            address(consumer),
+            LINK_FUNDS
+        );
     }
 
     function testReportGeneratorInitialization() public {
@@ -30,23 +38,31 @@ contract DataStreamsTest is Test {
     }
 
     function testReportGeneratorInitialUpdate() public {
-        (bytes memory signedReportV3,) = mockReportGenerator.generateReportV3();
+        (bytes memory signedReportV3, ) = mockReportGenerator
+            .generateReportV3();
 
         consumer.verifyReport(signedReportV3);
 
         int192 lastDecodedPriceAfter = consumer.lastDecodedPrice();
-        console2.log("Last Decoded Price after initial report:", lastDecodedPriceAfter);
+        console2.log(
+            "Last Decoded Price after initial report:",
+            lastDecodedPriceAfter
+        );
         assertEq(lastDecodedPriceAfter, initialPrice);
     }
 
     function testReportGeneratorUpdates() public {
         int192 lastDecodedPriceBefore = consumer.lastDecodedPrice();
-        console2.log("Last Decoded Price before update:", lastDecodedPriceBefore);
+        console2.log(
+            "Last Decoded Price before update:",
+            lastDecodedPriceBefore
+        );
 
         int192 newPrice = initialPrice + 1000;
 
         mockReportGenerator.updatePrice(newPrice);
-        (bytes memory signedReportV3,) = mockReportGenerator.generateReportV3();
+        (bytes memory signedReportV3, ) = mockReportGenerator
+            .generateReportV3();
 
         consumer.verifyReport(signedReportV3);
 
