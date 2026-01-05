@@ -1,5 +1,4 @@
 [profile.default]
-ignore_eip_3860 = true
 src = "src"
 out = "out"
 libs = ["lib"]
